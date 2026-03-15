@@ -14,8 +14,8 @@
         "name": "Bogdan Coman"
       },
       "source": {
-        "source": "github",
-        "repo": "ido4-dev/ido4shape"
+        "source": "url",
+        "url": "https://github.com/ido4-dev/ido4shape.git"
       },
       "category": "product-management"
     }
