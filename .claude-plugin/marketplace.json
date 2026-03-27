@@ -1,9 +1,10 @@
 {
-  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "ido4-plugins",
-  "description": "ido4 ecosystem plugins for Claude Code \u2014 specs-driven AI-hybrid development at scale",
   "owner": {
     "name": "ido4-dev"
+  },
+  "metadata": {
+    "description": "ido4 ecosystem plugins for Claude Code \u2014 specs-driven AI-hybrid development at scale"
   },
   "plugins": [
     {
