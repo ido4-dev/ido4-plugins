@@ -3,9 +3,6 @@
   "owner": {
     "name": "ido4-dev"
   },
-  "metadata": {
-    "description": "ido4 ecosystem plugins for Claude Code \u2014 specs-driven AI-hybrid development at scale"
-  },
   "plugins": [
     {
       "name": "ido4dev",
