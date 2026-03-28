@@ -13,10 +13,7 @@
       "author": {
         "name": "Bogdan Coman"
       },
-      "source": {
-        "source": "url",
-        "url": "https://github.com/ido4-dev/ido4shape.git"
-      },
+      "source": "./plugins/ido4shape",
       "category": "product-management"
     }
   ]
