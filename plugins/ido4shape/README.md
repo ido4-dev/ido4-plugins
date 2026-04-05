@@ -2,15 +2,25 @@
 
 A specification discovery plugin primarily designed for [Cowork](https://claude.com/product/cowork), Anthropic's agentic desktop application — though it also works in Claude Code.
 
-ido4shape helps product managers, founders, and tech leads figure out what to build. It guides you through conversation — reading your documents, asking the questions that matter, and tracking understanding across sessions — until clarity is deep enough to produce a structured strategic specification.
+ido4shape is like having a principal consultant inside Claude — it reads your docs, probes your assumptions, tracks stakeholder tensions across sessions, and produces the kind of structured strategic specification that usually takes weeks of consulting.
 
-Every specification tool assumes you already know what to build. ido4shape starts at "tell me about your problem."
+**Building with AI coding agents?** Your agent is only as good as the spec you give it. ido4shape produces structured specs with dependencies, priorities, and success conditions — input that makes Cursor, Claude Code, or Copilot actually deliver.
+
+**Need help thinking it through?** The agent probes your assumptions, extracts what your team knows but hasn't articulated, and turns it into something you can hand to your boss, your investors, or your dev team.
+
+Either way — every specification tool assumes you already know what to build. ido4shape starts at "tell me about your problem."
 
 ## Installation
 
 **Cowork (Claude Desktop):**
-1. Open Settings, go to the Plugins section, and add `ido4-dev/ido4-plugins` as a marketplace
-2. Find ido4shape in the marketplace and install it
+
+*Pending Anthropic marketplace approval. Once approved, ido4shape will be available directly in the Anthropic & Partners directory. Until then, install via personal marketplace:*
+
+1. Click **Customize** in the left sidebar
+2. Under **Personal plugins**, click the **+** button
+3. Select **Create plugin** → **Add marketplace**
+4. Enter `ido4-dev/ido4-plugins` and click **Sync**
+5. Open the Directory, go to the **Personal** tab, and click **+** on ido4shape to install
 
 **Claude Code (CLI):**
 ```bash
@@ -20,15 +30,14 @@ claude plugin install ido4shape@ido4-plugins
 
 ## Getting Started
 
-1. **Create a project folder** for your specification work (or use an existing one)
-2. **Add any supporting materials** you have — PRDs, meeting notes, architecture docs, research, analytics. The agent reads everything in the folder before asking its first question. You can also start with nothing.
-3. **Start a session:**
-   - **Cowork:** Select your project folder as the working folder, then type `/ido4shape:create-spec my-project`
+1. **Prepare a project folder** with any materials you have — PRDs, meeting notes, architecture docs, research. You can also start with nothing.
+2. **Start a session:**
+   - **Cowork:** Click **"Work in a project"** at the bottom of the chat input and select your project folder. Then type `/create-spec my-project` or pick from the "Get to work with ido4shape" suggestions.
    - **Claude Code:** Navigate to your project folder, start Claude Code, then run `/ido4shape:create-spec my-project`
-4. **Have a conversation** — the agent guides discovery. You can stop and resume across sessions; everything is saved.
-5. **When ready**, run `/ido4shape:synthesize-spec` to produce the formal spec
+3. **Have a conversation** — the agent reads your materials, asks questions, and builds understanding. Stop and resume anytime; everything is saved.
+4. **When ready**, run `/synthesize-spec` to produce the formal spec
 
-> **Cowork users:** Always select a working folder before starting. Without a folder selected, the plugin won't work.
+> **Cowork users:** Always select a project folder via "Work in a project" before starting. Without a folder selected, the plugin won't work.
 
 ## Example Workflows
 
@@ -144,19 +153,18 @@ The agent adapts to your communication style and energy. It connects dots across
 
 ## What You Get
 
-The output is a **strategic specification** — a structured document capturing what to build, who needs it, why, constraints, and verifiable success conditions for each capability.
+Not just a spec — the thinking behind it.
 
-The spec is organized into groups of related capabilities, each with priorities, risk assessments, and dependency relationships. It's designed to be read by humans and consumed by AI tools alike.
+The final output is a **strategic specification** — groups of capabilities with priorities, risk assessments, dependencies, and verifiable success conditions. Designed to be read by humans and consumed by AI tools alike. See a [complete example spec](references/example-strategic-notification-system.md).
 
-You can hand it to your engineering team, feed it to any AI coding agent, or use it as a project brief. No downstream tooling required.
+But the real value is everything the agent captures along the way:
 
-For teams that want to go further, [ido4 MCP](https://github.com/ido4-dev/ido4) can read the strategic spec, explore your codebase, and produce implementation-ready technical tasks. This is optional.
+- **The knowledge canvas** — your evolving understanding, updated after every insight, readable at any time. Survives sessions, context compaction, and crashes.
+- **Decisions & tensions** — every call made and why. Contradictions between stakeholders tracked until resolved. No more "why did we decide that?" six weeks later.
+- **Stakeholder perspectives** — who said what, what each person cares about, which perspectives are missing. Both the PM's view and the architect's survive into the spec.
+- **Independent review** — before the spec is finalized, parallel AI reviewers check technical feasibility, scope alignment, and dependency integrity.
 
-## The Knowledge Canvas
-
-During specification, the agent maintains a workspace that tracks everything across sessions — your evolving understanding, decisions made, tensions between stakeholder perspectives, and session summaries. You can read any of these files at any time; they're plain markdown.
-
-This is how multi-session continuity works: the agent reads its workspace at the start of each session and picks up exactly where you left off. If a session crashes, nothing is lost — the workspace reflects everything up to the last update.
+The spec goes wherever you need it — your dev team (as a project brief), your boss or investors (as a strategy document), AI coding agents (as structured input), or spec-driven tools like [ido4 MCP](https://github.com/ido4-dev/ido4) for automated technical decomposition.
 
 <!-- BEGIN SKILL INVENTORY -->
 ## Skills
@@ -198,10 +206,12 @@ These activate automatically during conversation when relevant — you don't inv
 
 ## More Information
 
+- [CONTRIBUTING.md](CONTRIBUTING.md) — How to report bugs, run tests, submit changes
 - [SECURITY.md](SECURITY.md) — Data handling, hooks, privacy
-- [DEVELOPER.md](DEVELOPER.md) — Spec format details, workspace structure, the ido4 pipeline
+- [Developer Guide](docs/developer-guide.md) — Spec format details, workspace structure, the ido4 pipeline
 - [CHANGELOG.md](CHANGELOG.md) — Version history
-- [VISION.md](VISION.md) — Product vision, design philosophy, competitive analysis
+- [Vision & Strategy](docs/vision.md) — Product vision, design philosophy, competitive analysis
+- [Documentation Index](docs/README.md) — Full documentation directory
 
 ## License
 
