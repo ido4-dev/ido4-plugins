@@ -6,7 +6,6 @@ Plugin marketplace for the [ido4](https://ido4.dev) ecosystem. Specs-driven AI-h
 
 | Plugin | Description |
 |--------|------------|
-| [ido4dev](https://github.com/ido4-dev/ido4dev) | AI-hybrid development platform — full project context, quality enforcement, institutional memory |
 | [ido4shape](https://github.com/ido4-dev/ido4shape) | Creative specification through conversation — shape what to build |
 
 ## Installation
@@ -16,12 +15,11 @@ Plugin marketplace for the [ido4](https://ido4.dev) ecosystem. Specs-driven AI-h
 /plugin marketplace add ido4-dev/ido4-plugins
 
 # Install plugins
-/plugin install ido4dev@ido4-plugins
 /plugin install ido4shape@ido4-plugins
 ```
 
 ## The ido4 Pipeline
 
-**ido4shape** (shape what to build) → strategic spec → **ido4dev** (govern how it's built) → governed implementation
+**ido4shape** (shape what to build) → strategic spec → downstream tools (decomposition, governance, implementation)
 
-Both plugins work independently. Together, they provide the full specs-driven development pipeline.
+ido4shape produces a strategic spec through guided conversation. The spec is consumed by separate tools — including the [`ido4dev`](https://github.com/ido4-dev/ido4dev) plugin (distributed via the Claude Code CLI, not via this marketplace) and the [`ido4`](https://github.com/ido4-dev/ido4) MCP server — to decompose, govern, and implement the work.
