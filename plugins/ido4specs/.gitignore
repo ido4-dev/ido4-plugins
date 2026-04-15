@@ -1,0 +1,30 @@
+# Dependencies (if any tooling ends up here)
+node_modules/
+.pnp
+.pnp.js
+
+# Build output. dist/ is committed (both bundled validators with version
+# markers and SHA-256 checksums) — see SECURITY.md "Bundled Validators"
+# section. Only transient build artifacts are ignored here.
+coverage/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
