@@ -1,0 +1,227 @@
+# CLAUDE.md — ido4dev Plugin
+
+## What This Is
+
+The governance plugin for ido4 — methodology-aware orchestration, quality gates, compliance, and planning on top of an initialized ido4 project. Authoring technical specs is handled by the companion plugin `ido4specs` (install alongside `ido4dev` to run the full pipeline).
+
+## Architecture
+
+```
+ido4specs (companion plugin, upstream)
+  └── create-spec → synthesize-spec → review-spec → validate-spec
+        │
+        ▼ (hand off *-tech-spec.md)
+ido4dev (this plugin)
+  ├── Skills (7) — Stateful workflows (onboard, guided-demo, sandbox, sandbox-explore, ingest-spec, status) + dev tooling (pilot-test — scoped dev-only)
+  ├── Agents (1) — project-manager (PM); Phase 4 rebuilds it as profile-aware AI-work-product auditor
+  ├── Hooks (4 types) — SessionStart (MCP install + tech-spec-validator bundle + resume banner), SessionEnd (state.json persistence), PreToolUse (3 governance gates), PostToolUse (4 rule files producing 14 deterministic findings)
+  └── .mcp.json       — Starts @ido4/mcp server from ${CLAUDE_PLUGIN_DATA}
+
+@ido4/mcp (npm package, installed automatically)
+  ├── Tools (63 Hydro / 61 Scrum / 59 Shape Up / 29 bootstrap)
+  ├── Resources (9)
+  └── Prompts (8 methodology-aware ceremonies) — standup, plan, board, compliance, health, retro, review, execute-task. Invoked as /mcp__plugin_ido4dev_ido4__<prompt> slash commands.
+
+@ido4/core (npm dependency of @ido4/mcp)
+  └── Domain logic: BRE, profiles, services, repositories
+```
+
+## ido4specs Extraction — Complete (2026-04-15)
+
+The decomposition / authoring slice of this plugin was extracted into a standalone companion plugin, `ido4specs`, so engineers can author technical specs as an upstream step feeding into this plugin's governance flow. The production pipeline is now `ido4shape → ido4specs → ido4dev:ingest-spec → GitHub issues under the project's methodology`.
+
+**All five phases complete** — `ido4specs` is live on GitHub, npm (`@ido4/tech-spec-format`, currently 0.9.1), and the `ido4-dev/ido4-plugins` marketplace (currently v0.4.3 after five E2E hardening rounds in its own repo). This repo was slimmed to governance-only and released at `v0.8.0` on 2026-04-15. The `decompose` / `decompose-tasks` / `decompose-validate` skills and the three authoring agents (`code-analyzer`, `technical-spec-writer`, `spec-reviewer`) moved to `ido4specs`; `decompose-validate` was renamed to `ingest-spec` and slimmed to dry-run preview + ingest-on-approval. The only remaining closure is a user-driven live E2E smoke test of the full `/ido4specs:create-spec → ... → /ido4dev:ingest-spec` chain in a fresh Claude Code session.
+
+**Where to find the extraction record:**
+1. `~/dev-projects/ido4specs/docs/extraction-plan.md` — canonical plan for all five phases, with per-phase status and completion notes
+2. `~/dev-projects/ido4specs/docs/phase-2-completion-record.md` — historical record of the Phase 2 plugin scaffold state
+3. `~/dev-projects/ido4-suite/PLAN.md` Phase 9 — per-sub-phase checkbox state and plan history
+4. Session memory `project_ido4specs_extraction.md` in this repo's pool — quick-load pointer
+
+**Side-effect:** Phase 7 (the `@ido4/mcp` wildcard-dep bug) closed as part of Phase 9.5.1 — `ido4/scripts/release.sh` now mechanically pins internal `@ido4/*` deps to `~${VERSION}` on every bump. A fresh `npm install` in this repo post-0.8.0 pulls `@ido4/core@0.8.0` (was frozen at 0.5.0), and `tests/round3-agent-artifact.mjs` now passes 22/0 (was 19/2 failing).
+
+`ido4specs` has zero runtime dependency on this plugin; both can exist independently.
+
+## Active Work — Release readiness via synthetic verification (2026-06-14)
+
+**Current state (2026-06-18): PILOT GATE CLEARED — both judges adopt.** Phase 5's substrate work is done; the work since is a **release-readiness campaign driven by an automated synthetic test system**, and the synthetic just cleared the pilot gate. Read these first for current context:
+- `docs/product-thesis-hybrid-teams.md` — the product-MEANING frame (bottleneck inversion; DORA-for-hybrid-teams; sell-to-the-fear enterprise wedge; 3-altitude readiness path). The strategic complement to the architecture plan.
+- `~/dev-projects/ido4-suite/synthetics/` — the synthetic harness (real headless `claude -p` sessions + dual judge). **The standing regression gate** — every fix re-runs T3. See `briefs/synthetics-harness-brief.md`.
+- `reports/synthetic-005…007` — the audit-trust closure arc: 005 (airtight no-write-path verified + the symmetric false-negative found), 006 (record-derived bypass + coverage instrument verified; A3/A4 surfaced), **007 (clean confirmation — A2+A3+A4 live-verified; both judges "Strong pass" / "Adopt it. Ship it")**. Earlier baselines: `synthetic-001` (findings) + `synthetic-002` (first verification).
+
+**What shipped (verified across three live T3 runs):** the **six-iteration audit-trust arc is fully closed.** `@ido4/mcp@0.13.1` carries: record-authoritative bypass derivation (`bypassObservationsFromRecord`) + coverage-instrumented `persist_audit_findings` (silence is now provably scoped) + new read-only `get_governance_memory` accessor + A4 dependency-readiness advisory on container assignment. Plus earlier: P1 (profile container naming), P2 (DoD-gate closing), P7 (deterred-bypass record w/ `actor_id`). Plugin (committed `f1f097e`, **local — not yet pushed/released**): fix #1 gate↔audit matcher symmetry (+ validate-plugin guard) so `plan_task`+`skipValidation` is recorded not executed-ungated; AGENT.md reconciles bypasses from the record + cites coverage; dep `^0.13.1`.
+
+**The split — now resolved.** The **deterministic BRE gate was pilot-ready since synthetic-002**; the **audit/memory layer (the differentiated half) is now pilot-ready too** — A2 (don't invent findings), the audit false-negative (don't undercount — fix #1/#2), and the ceremony false-negative (A3: `/retro` reports deterred bypasses truthfully via `get_governance_memory`, no more false "zero events") are all structurally closed + live-verified. The lesson throughout: **prose discipline drifts without structural backing** — every fix moved a constraint from prose into tool-surface/structure (no-write-path, record-derived counts, matcher-symmetry guard).
+
+**Next (founder-driven):** push `f1f097e` + cut an ido4dev plugin release pinning `@ido4/mcp@^0.13.1`; then the pilot. **Standing pilot acceptance criterion:** verify the PostToolUse advisory→audit bridge fires in a LIVE interactive sprint (headless `-p` can't surface it). **Bounded non-blockers tracked in plan §11 (2026-06-18):** Scrum sizing/scope-lock + XL→L ingest downgrade; GitHub Project container-readback flakiness (empty ceremony rollups); AW001 worker-vs-PM scoping (harness P2 false-fail); stale resume banner; compliance-cratering-to-F alarm fatigue.
+
+---
+
+**Phase 5 historical context (substrate, complete):** The plugin underwent a multi-phase reshape codified at `~/dev-projects/ido4dev/docs/architecture-evolution-plan.md`. **Phase 4 closed 2026-04-25** with substrate ships clean + 6 findings handed off to Phase 5 (`reports/e2e-006-phase-4-partial.md`). **Phase 5 brief drafted 2026-04-26 at `docs/phase-5-brief.md`**, expanded under a senior-architect production-ready lens to five workstreams: WS1 engine fixes (F5 status-key throw, F6 explicit `executed: boolean`, F4 persist-all-attempts, F7 new `get_methodology_profile` tool), WS2 agent UX hardening (F1-F4 + F7-consume in `agents/project-manager/AGENT.md` prose), WS3 Tier B content metrics (PR body + `get_task_comments` + spec lineage + privacy section + parser-warning surface in `ingest-spec`), WS4 sandbox UX hardening (pre-flight + best-effort rollback for OBS-06/07/09; absorbed §7.9 standing initiative for real-release readiness), WS5 comprehensive E2E + release readiness (`/ido4dev:status` skill for OBS-01; doc freshness sweep; error UX audit; full 6-skill smoke; README "Known platform constraints"). Estimated ~17-23 working days. Phase 4 substrate reference: `docs/phase-4-brief.md`; Phase 3 substrate reference: `docs/phase-3-brief.md`; standing reference: `~/dev-projects/ido4-suite/docs/hook-and-rule-strategy.md`.
+
+**Product-thesis framing (§3.9 of the evolution plan).** Hooks/rules/state aren't UX polish — they're the operating substrate for hybrid human+AI engineering at scale. Humans + old tools + AI in the old pattern leaves AI's speed capped at human-coordination speed; pure AI without governance drifts invisibly. ido4 bridges them by **operationalizing institutional memory** (remembering methodology + dependencies + compliance trajectory + epic relationships) and **imposing it at the moment it's relevant**. Mutual substrate: AI agents get context they'd otherwise reconstruct; humans offload coordination to the system. The test for every rule, audit metric, or persisted finding: "does this operationalize institutional memory — either remembering something, or surfacing something the user/agent needs but doesn't have in context?" If not, it's noise. See `architecture-evolution-plan.md §3.9` for the full framing.
+
+**State as of 2026-04-25:**
+- **Phase 1** (cleanup, planning docs) — complete (2026-04-17).
+- **Phase 2** (plugin diet — ceremony duplicates deleted, migration debt cleared, Stage 4 items landed) — complete (2026-04-20). Report: `reports/e2e-004-phase-2-smoke.md`.
+- **Phase 3** (hooks rebuild, WS2) — **ships clean (2026-04-25)**, commits `c0a22d2` / `0e17edf` / `ebabb20`. Substrate built: rule-runner library + vendored YAML/Mustache, `state.json` with `coerce()` preserving unknown fields, six rule files producing 14 rules across PostToolUse + PreToolUse, advisory-escalation pattern (Stage 7), MCP `tool_response` unwrap (Stage 9 critical fix). Reports: `reports/e2e-005-phase-3-smoke.md`, `reports/phase3-mcp-tool-response-bug-2026-04-25.md`. Canonical hook reference: `docs/hook-architecture.md`. Stage 6 was skipped (PostCompact hook not implemented in current Claude Code; memory-system auto-reload covers the underlying need); §3.1 violation closed across all migrated matchers. Four research-first pre-implementation corrections (Stages 3, 5, 6, 7) caught optimistic primitive assumptions before code shipped — the discipline carries forward into Phase 4.
+- **Phase 4** (PM agent autonomy, WS3) — **closes 2026-04-25 with substrate-ships-clean verdict + 6 findings handed off to Phase 5 (Path B)**. Stages 1-4 verified mechanically + (Stage 1) live-multi-profile-verified. Stage 5 closing smoke ran 2 of 6 scenarios before pausing on rich agent-UX findings: AW001 wiring works (substrate ✓), but the agent layer over-fetches catastrophically (63 tool calls, multiple permission prompts), overwrites state.json instead of merging, reasons from wrong audit source, and produces partially-miscalibrated findings — *"UX nightmare and erodes trust"* (user feedback). Plus 2 engine bugs surfaced. Substrate references: `docs/phase-4-brief.md`, `docs/hook-architecture.md`. Findings: `reports/e2e-006-phase-4-partial.md`.
+- **Phase 5** (brief drafted 2026-04-26; last phase before v1.0 real release) — **triggered 2026-04-25 by Phase 4 Stage 5 partial smoke**. Brief at `docs/phase-5-brief.md` expands §7.10's four-workstream scope to five under a senior-architect production-ready lens. Senior-architect-lens additions beyond the original §7.10 scope: F7 newly elevated from Phase 4 Stage 1 watch-item (subagents can't read MCP resources per Anthropic docs; need `get_methodology_profile` tool); WS4 sandbox UX folded in (was §7.9 standing initiative; OBS-06/07 orphan GitHub issues block real-release first-touch UX); WS5 expanded from "verify fixes" to comprehensive E2E + release readiness (`/ido4dev:status` skill for OBS-01 banner-visibility regression #24425; doc freshness sweep; error UX audit; full 6-skill smoke); F4 chosen as option (c) — persist all attempts with explicit `executed: boolean` (cleaner for §3.9 institutional-memory thesis than option (b) prose-only); Round-4 silent-failure gaps partially folded into WS3 via `ingest-spec` post-validation surface. Engine: one bundled PR releasing `@ido4/mcp@0.9.0`. Plugin: `ido4dev@1.0.0` at phase close. Estimated ~17-23 working days. Findings ledger preserved in `reports/e2e-006-phase-4-partial.md`.
+
+**Open investigations (status as of 2026-04-25):**
+- **§7.6 — Routines vs `CronCreate`** — Researched + decided. Two distinct primitives: Routines (cloud, account-scoped, durable, runs blind to `state.json`/skills/`${CLAUDE_PLUGIN_DATA}`) and `CronCreate`-the-tool (in-session, 7-day expiry). Routines deferred from Phase 4 by user decision (2026-04-25); three concrete re-open triggers documented (multi-stakeholder distribution, cross-session AI-audit pattern, real users arrive).
+- **§7.7 — Event log promotion** — Standing watch. None of Phase 4's planned rules require cross-session event history. Concrete pending triggers documented; first concrete cross-session rule earns the upgrade.
+- **§7.8 — Memory architecture** — Preliminary-resolved. Four-layer model (state.json, GitHub issues, `.ido4/project-info.json` + BRE state, SessionStart `additionalContext`) covers ido4's use cases. No MEMORY.md authorship needed unless Phase 4 surfaces a concrete gap.
+- **§7.9 — Sandbox UX + transactional integrity** — **Folded into Phase 5 WS4 (2026-04-26)** for real-release readiness. OBS-06/07/09 absorbed as the WS4 scope (pre-flight + best-effort rollback + skill auto-prompt + skill/tool detection alignment + project-v2-orphan documented limitation). Tracked in `reports/sandbox-ux-findings-2026-04-25.md` + `docs/phase-5-brief.md §4.4`.
+- **§7.10 — Phase 5** — **brief drafted 2026-04-26 at `docs/phase-5-brief.md`**. Expanded to five workstreams under a senior-architect production-ready lens (engine fixes, agent UX hardening, Tier B content metrics, sandbox UX hardening, comprehensive E2E + release readiness). Phase 5 is the last phase before v1.0 real release.
+- **§7.6 — Routines** — re-open trigger "real users arriving" fires at v1.0; tracked as v1.1 work, not absorbed in Phase 5 (Routines is a cloud-substrate initiative of its own size).
+
+**Before changing skills, agents, hooks, rule files, or anything in `docs/`:** read `~/dev-projects/ido4dev/docs/architecture-evolution-plan.md` (especially §3 principles, §6 decisions, §11 status log, §7.10 Phase 5 scope) and the active-phase brief `docs/phase-5-brief.md` (substrate reference for the in-progress Phase 5 work). Phase 4 brief `docs/phase-4-brief.md` and Phase 3 brief `docs/phase-3-brief.md` remain valid as substrate references for the layers they shipped. Findings ledger driving Phase 5 scope: `reports/e2e-006-phase-4-partial.md`. Decisions are recorded in plan §6; do not re-litigate. For hook/rule design specifically, also read the suite-level `~/dev-projects/ido4-suite/docs/hook-and-rule-strategy.md` (§2 principles, §4 canonical patterns, §5 anti-patterns).
+
+**Doc discipline (working principle):** update `architecture-evolution-plan.md` §11 (status log) at every phase gate, after every notable achievement, after every decision lands. The plan is a living document — staleness erodes its value as the guiding driver. The same applies to the active design brief `docs/phase-5-brief.md` §10: progress that doesn't reach the doc didn't happen as far as future sessions are concerned.
+
+## MCP Server Dependency
+
+The plugin doesn't bundle the MCP server. On first session start, a `SessionStart` hook installs `@ido4/mcp` from npm to `${CLAUDE_PLUGIN_DATA}/`. The `.mcp.json` references the installed binary. This means:
+
+- Plugin updates don't require re-downloading the MCP server
+- The MCP server updates independently via npm version ranges
+- No build step — the plugin is pure markdown + configuration
+
+## Bundled tech-spec-validator
+
+`skills/ingest-spec` runs a fail-fast pre-check on the technical spec before calling `ingest_spec`. The check uses `@ido4/tech-spec-format`'s parser, shipped as a zero-dependency Node bundle at `dist/tech-spec-validator.js`. A `SessionStart` hook copies it to `${CLAUDE_PLUGIN_DATA}/tech-spec-validator.js` so the skill can invoke `node "${CLAUDE_PLUGIN_DATA}/tech-spec-validator.js" <path>` without referencing the plugin install root.
+
+This matches the dual-bundle pattern already used by `ido4specs` and `ido4shape` (canonical doc: `~/dev-projects/ido4-suite/docs/release-architecture.md`). The bundle is version-locked:
+
+- `dist/tech-spec-validator.js` — the bundle (banner contains `@ido4/tech-spec-format v<X.Y.Z>`)
+- `dist/.tech-spec-format-version` — semver marker of the bundled version
+- `dist/.tech-spec-format-checksum` — SHA-256 of the bundle (verified in `tests/validate-plugin.sh`)
+
+**Manual bundle refresh:** `bash scripts/update-tech-spec-validator.sh <version>` (npm, e.g. `0.9.1`) or `bash scripts/update-tech-spec-validator.sh ~/dev-projects/ido4` (local build). The script fetches/copies the bundle, smoke-tests it against `references/example-technical-spec.md`, and writes the version + checksum markers.
+
+**Automatic bundle refresh:** `.github/workflows/update-tech-spec-validator.yml` receives `repository_dispatch: tech-spec-format-published` from the ido4 monorepo's publish flow, opens an auto-PR with the updated bundle, and auto-merges patch/minor bumps. Major bumps open with `needs-review`. A weekly cron acts as a safety net. Requires `PAT` secret on this repo (for PR creation) and `IDO4DEV_DISPATCH_TOKEN` secret on the ido4 monorepo (for dispatch).
+
+**Release gate:** `scripts/release.sh` runs `check_bundle` in Layer 1 pre-flight: refuses to release if the bundle is missing or missing its version header, warns interactively on drift against npm (`--yes` flag skips the prompt).
+
+The purpose is to close the "parses upstream in `ido4specs:validate-spec` but fails downstream in `ido4dev:ingest-spec`" seam — same parser, same version on both sides of the trust boundary.
+
+## Hook Architecture
+
+The plugin's hook layer — delivered by Phase 3 — is a deterministic rule-runner with YAML rule files evaluated against live hook events, backed by a small `state.json` substrate. Full details: **`~/dev-projects/ido4dev/docs/hook-architecture.md`** (canonical reference, extension procedure, failure modes, current rule inventory).
+
+**What lives where:**
+- `hooks/hooks.json` — Claude Code hook entries (SessionStart/SessionEnd + PreToolUse + PostToolUse)
+- `hooks/lib/rule-runner.js` — the pure-Node evaluator (zero runtime npm deps)
+- `hooks/lib/state.js` — `state.json` read/write wrapper
+- `hooks/lib/vendored/` — version-locked js-yaml + mustache UMD bundles
+- `hooks/rules/*.rules.yaml` — one rule file per matcher group; sibling `*.test.yaml` fixtures
+- `hooks/scripts/*.{sh,js}` — hook-entry shims (SessionStart install/bundle/banner; SessionEnd state)
+
+**Design principles (enforced, not aspirational):**
+- **§3.1 — BRE is deterministic; LLM is for judgment, not enforcement.** The rule-runner never invokes an LLM. Rule files process structured tool responses through deterministic expressions (`when:`), templated output (Mustache `emit:`), and advisory escalation (`escalate_to:` recommending delegation to a named agent).
+- **§3.9 — Institutional memory as the operating substrate.** Every rule passes the "earn its slot" test: does it operationalize memory the system has that the user or agent needs imposed now? If not, it's noise.
+- **Distribution by signal origin.** Cascade rules live on `complete_and_handoff` (where the signal exists), not on `validate_transition` (which never returns cascade info). Always verify the signal shape before writing rules — four Phase 3 stages had research corrections on brief-assumed fields that didn't exist.
+- **Silence is a feature.** Fewer rules with higher signal > many rules with low specificity. Stage 4 audit cut 2 of 7 sketched rules as noise.
+
+**Extension procedure (adding a rule):** see `docs/hook-architecture.md` §"How to add a new rule file" — choose matcher, verify signal shape in `@ido4/mcp`, write rules against real fields, use triple-brace Mustache for prose, create sibling test fixture, wire hooks.json, update MIGRATED_MATCHERS in `validate-plugin.sh`, run tests.
+
+**Standing reference for design decisions:** `~/dev-projects/ido4-suite/docs/hook-and-rule-strategy.md` defines suite-level principles, canonical patterns (§4), and anti-patterns (§5). Read that doc to decide *whether* a new pattern earns its slot; read `docs/hook-architecture.md` to figure out *how* to implement it in this plugin.
+
+## Skill Conventions
+
+- Skills are in `skills/{name}/SKILL.md` with YAML frontmatter
+- Commands are in `commands/{name}.md` (legacy, mapped to skills)
+- Tool references use `mcp__plugin_ido4dev_ido4__*` prefix
+- Skill cross-references use `/ido4dev:{name}` format
+- Every skill follows Claude Code Agent Skills standard
+
+## Development
+
+### Local testing
+```bash
+claude --plugin-dir /path/to/this/repo
+```
+
+### After changes
+```bash
+/reload-plugins
+```
+
+### Release
+```bash
+bash scripts/release.sh --dry-run [patch|minor|major] "Release message"  # pre-flight only
+bash scripts/release.sh [patch|minor|major] "Release message"            # real release
+```
+The script runs Layer 1 pre-flight checks (branch, clean tree, remote sync, validation suite, MCP compatibility, version coherence), then bumps version in both `package.json` and `.claude-plugin/plugin.json`, commits, tags, and pushes. Marketplace sync and GitHub release creation happen automatically via CI (`sync-marketplace.yml` gated on `workflow_run`). Use `--yes` flag for non-interactive agent/CI use: `bash scripts/release.sh --yes patch "message"`.
+
+### Working style
+
+Make the call. Reserve (a)/(b)/(c) for genuinely different paths, not flavors of a recommendation already made. A short answer the user can redirect beats a long one that preempts every objection.
+
+## ido4 Suite Coordination
+
+This repo is part of the ido4 suite. Cross-repo release patterns, audit tooling, and coordination docs live in `~/dev-projects/ido4-suite/`:
+
+- `docs/release-architecture.md` — the canonical 4-layer release pattern this repo follows
+- `scripts/audit-suite.sh` — verifies all repos against the pattern. Run after any release/CI changes: `bash ~/dev-projects/ido4-suite/scripts/audit-suite.sh`
+- `PLAN.md` — master plan tracking in-progress cross-repo work
+- `suite.yml` — machine-readable suite manifest
+
+Before changing release scripts, CI workflows, or cross-repo dispatch: read `release-architecture.md` first. After changes: run the audit script.
+
+Before writing or auditing skills, agents, or prompts: read `docs/prompt-strategy.md` first. It defines degrees of freedom, rules vs principles, language guidance for Opus 4.5/4.6, skill architecture patterns, and the two-layer validation pattern.
+
+## E2E Testing Protocol
+
+When monitoring a live ido4dev session (any plugin skill like ingest-spec/sandbox-explore/guided-demo, or any MCP ceremony like `/mcp__plugin_ido4dev_ido4__standup`, `/mcp__plugin_ido4dev_ido4__plan`), follow this protocol.
+
+**Before starting a new test round, read the most recent report in `reports/e2e-00N-*.md`.** Each round's report contains the current state of observations, known platform quirks (subagent execution patterns, skill-discovery inconsistencies, session bloat concerns), and the iteration pattern that emerged from prior rounds. Start there — it's the source of truth for round-to-round continuity.
+
+### Setup
+
+Two sessions run in parallel:
+- **Test session:** A project folder with the ido4dev plugin loaded. The user interacts naturally.
+- **Monitor session:** Opened in this repo. The user pastes interactions from the test session. Claude evaluates behavior against the skill and agent definitions in this codebase.
+
+### How to monitor
+
+1. Read the skill being tested (`skills/{name}/SKILL.md`) and any agents it invokes (`agents/{name}.md` or `agents/{name}/AGENT.md`). These define expected behavior — stages, sequencing, output format, governance rules.
+2. As interactions are pasted, compare actual behavior against the definitions. Look for: skipped stages, wrong sequencing, missing output fields, governance violations, silent failures, quality degradation, hallucinated content.
+3. Log every deviation as an observation immediately — don't batch them.
+
+### Observation format
+
+Each observation gets:
+- **ID:** Sequential (OBS-01, OBS-02, ...) within the test
+- **Type:** Bug, design gap, behavioral drift, quality issue, governance violation
+- **Severity:** Low / Medium / High / Critical
+- **When:** What stage and interaction triggered it
+- **What happened:** The actual behavior (quote the interaction)
+- **What was expected:** Traced to the specific skill/agent definition (file and section)
+- **Evidence:** The pasted interaction or output that shows the deviation
+- **Fix candidate:** Where in this repo the fix would go (file, section)
+
+### Report
+
+After the test session completes, produce a structured report in `reports/`:
+- File name: `e2e-{NNN}-{project-name}.md`
+- Sections: Test Setup, Pipeline Summary (what stages ran), Observations (all OBS entries), Positives (what worked well), Assessment, Next Steps
+- First report for each skill becomes the calibration baseline for future tests
+
+### What to watch for by stage type
+
+Don't duplicate skill definitions here — read the skill. But these cross-cutting concerns apply to any test:
+- **Does the skill read what it claims to read?** (canvas, spec, codebase, MCP resources)
+- **Does the output match the defined format?** (sections, metadata, structure)
+- **Are governance principles respected?** (epic integrity, dependency coherence, etc.)
+- **Does the agent handle edge cases?** (empty input, missing files, greenfield projects)
+- **Are intermediate review points honored?** (does the user get to review before the next stage proceeds)
+- **Is content preserved through the pipeline?** (dependencies, stakeholder context, cross-cutting concerns — nothing silently dropped)
+
+## Related
+
+- [@ido4/mcp](https://github.com/ido4-dev/ido4) — MCP server + core domain (the monorepo)
+- [ido4shape](https://github.com/ido4-dev/ido4shape) — Creative specification plugin (upstream)
+- [ido4-demo](https://github.com/ido4-dev/ido4-demo) — Demo codebase for sandbox
+- [ido4-plugins](https://github.com/ido4-dev/ido4-plugins) — Plugin marketplace
