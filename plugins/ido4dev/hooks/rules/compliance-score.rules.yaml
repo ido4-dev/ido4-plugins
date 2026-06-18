@@ -1,0 +1,100 @@
+# Rules for PostToolUse on mcp__plugin_ido4dev_ido4__compute_compliance_score.
+#
+# Signals used (all native on ComplianceScore, verified against
+# ~/dev-projects/ido4/packages/core/src/domains/compliance/compliance-service.ts):
+#   - score:  number (0-100)
+#   - grade:  'A' | 'B' | 'C' | 'D' | 'F'
+#   - categories.{brePassRate|qualityGates|processAdherence|containerIntegrity|flowEfficiency}.score
+#   - recommendations: string[]
+#
+# Stateful diffs:
+#   - state.last_compliance.grade      (baseline grade from prior measurement)
+#   - state.last_compliance.categories (baseline per-category scores)
+#
+# Thesis framing: this rule file is the substrate that makes governance
+# drift *visible over time*. Without these rules, a project can slowly
+# lose compliance and no one notices until retro. With them, drift
+# surfaces the moment it happens — institutional memory imposed.
+
+version: 1
+event: PostToolUse
+matcher: mcp__plugin_ido4dev_ido4__compute_compliance_score
+hit_policy: collect
+
+rules:
+  # CS001 — Overall grade dropped vs. prior measurement.
+  # Fires when grade moved downward (A→B, B→C, etc.). Load-bearing for the
+  # WS3 (Phase 4) PM-agent reactive layer: a grade drop is the canonical
+  # "something changed worth intervening" signal.
+  - id: CS001_grade_drop
+    when: |
+      state.last_compliance &&
+      typeof state.last_compliance.grade === 'string' &&
+      'ABCDF'.indexOf(tool_response.data.grade) > 'ABCDF'.indexOf(state.last_compliance.grade)
+    profiles: [hydro, scrum, shapeup]
+    severity: warning
+    escalate_to: project-manager
+    emit:
+      title: "Compliance grade dropped: {{ state.last_compliance.grade }} → {{ tool_response.data.grade }}"
+      body: |
+        Previous measurement: grade {{ state.last_compliance.grade }} (score {{ state.last_compliance.score }})
+        Current measurement:  grade {{ tool_response.data.grade }} (score {{ tool_response.data.score }})
+
+        {{{ tool_response.data.summary }}}
+      cta: "Review categories below and address the weakest before it compounds. A project-manager agent review is recommended."
+
+  # CS002 — Category crossed a threshold it hadn't crossed before.
+  # Stateful: compares current category scores to the baseline in state.
+  # Fires when any category drops below 70 (threshold) AND was ≥70 on the
+  # prior measurement. "Crossed the line downward" — not just "below threshold."
+  # Silence on stable-weak and stable-strong; speak only on the boundary crossing.
+  #
+  # Body intentionally does NOT re-enumerate which categories crossed — the
+  # full ComplianceScore.categories map is already in Claude's turn context
+  # via the tool response. The rule's job is to flag that a crossing
+  # happened; Claude looks at the categories to see which.
+  - id: CS002_category_threshold_crossed
+    when: |
+      state.last_compliance &&
+      state.last_compliance.categories &&
+      Object.keys(tool_response.data.categories).some(k => {
+        const curr = tool_response.data.categories[k];
+        const prev = state.last_compliance.categories[k];
+        return curr && prev && curr.score < 70 && prev.score >= 70;
+      })
+    profiles: [hydro, scrum, shapeup]
+    severity: warning
+    emit:
+      title: "A compliance category dropped below 70 this measurement (grade {{ tool_response.data.grade }})"
+      body: |
+        One or more categories in tool_response.data.categories crossed the 70 threshold downward since the last measurement. Identify which by comparing current scores to state.last_compliance.categories.
+      cta: "This is a boundary crossing, not a steady-state weakness — it's the moment to intervene before compounding."
+
+# After every evaluation, replace the baseline in state with the current measurement.
+# This is what makes the stateful rules above work across calls/sessions.
+# Expression returns a full snapshot of the fields the rules will diff against next time.
+#
+# Phase 4 Stage 4 addition: compliance_history. A bounded array (cap 4) of
+# recent measurements that the SessionStart banner reads to surface
+# trajectory ("A → B → B"). last_compliance is for stateful diffs (CS001/CS002);
+# compliance_history is for human-readable trend display. The two serve
+# different purposes and don't overlap.
+post_evaluation:
+  persist:
+    last_compliance: |
+      ({
+        grade: tool_response.data.grade,
+        score: tool_response.data.score,
+        categories: tool_response.data.categories,
+        summary: tool_response.data.summary,
+        timestamp_iso: now_iso,
+      })
+    compliance_history: |
+      [
+        ({
+          grade: tool_response.data.grade,
+          score: tool_response.data.score,
+          timestamp_iso: now_iso,
+        }),
+        ...((Array.isArray(state.compliance_history) ? state.compliance_history : []).slice(0, 3))
+      ]

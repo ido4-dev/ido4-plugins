@@ -1,0 +1,22 @@
+{
+  "name": "ido4dev",
+  "description": "Governance plugin for ido4 \u2014 ingests technical specs into methodology-shaped GitHub issues and runs compliance, standups, planning, and retrospectives on top. Pair with ido4specs for technical-spec authoring.",
+  "version": "0.10.0",
+  "author": {
+    "name": "Bogdan Coman",
+    "url": "https://github.com/b-coman"
+  },
+  "repository": "https://github.com/ido4-dev/ido4dev",
+  "homepage": "https://ido4.dev",
+  "license": "MIT",
+  "keywords": [
+    "ai-hybrid-development",
+    "specs-driven",
+    "methodology",
+    "multi-agent",
+    "context-intelligence",
+    "institutional-memory",
+    "quality-enforcement",
+    "mcp"
+  ]
+}
